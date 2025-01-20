@@ -1,7 +1,10 @@
 import CloseChatDarkIcon from '../icons/CloseChat_dark_icon';
 import AddChatIcon from '../icons/AddChat_icon';
 
-export default function ChatList() {
+import { useState } from 'react';
+
+export default function ChatList({ selectedChat, onSelectChat }) {
+
   return (
     <div className="flex flex-col flex-1">
       {/* 新增聊天按钮 */}
@@ -15,8 +18,16 @@ export default function ChatList() {
       {/* 聊天列表 */}
       <div className="p-4 bg-gray-700 text-black flex-1">
         <div className="space-y-2">
-          <ChatItem title="聊天1" />
-          <ChatItem title="聊天2" />
+          <ChatItem
+            title="聊天1"
+            isSelected={selectedChat === '聊天1'}
+            onClick={() => onSelectChat('聊天1')}
+          />
+          <ChatItem
+            title="聊天2"
+            isSelected={selectedChat === '聊天2'}
+            onClick={() => onSelectChat('聊天2')}
+          />
         </div>
       </div>
 
@@ -31,9 +42,13 @@ export default function ChatList() {
   );
 }
 
-function ChatItem({ title }) {
+function ChatItem({ title, isSelected, onClick }) {
   return (
-    <div className="p-2 bg-white rounded border border-black flex justify-between items-center">
+    <div
+      className={`p-2 rounded border border-black flex justify-between items-center cursor-pointer transition-colors
+        ${isSelected ? 'bg-black text-white' : 'bg-white text-black'}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between w-full">
         <span>{title}</span>
         <div className="flex items-center text-gray-500 hover:text-red-500 cursor-pointer">

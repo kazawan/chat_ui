@@ -19,6 +19,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
 
   const messageContainerRef = useRef(null);
 
@@ -76,7 +77,10 @@ function App() {
       {/* 侧边栏 */}
       <div className={`w-64 bg-gray-800 border-r border-black rounded-none shadow-xl transition-transform duration-300 overflow-hidden flex flex-col h-screen fixed ${isSidebarOpen ? 'translate-x-0' : '-translate-x-64'} ${isMobile && !isSidebarOpen ? 'hidden md:flex' : 'flex'} z-50 backdrop-blur-lg bg-opacity-100`}>
         <UserProfile onClose={() => setIsSidebarOpen(false)} />
-        <ChatList />
+        <ChatList 
+          selectedChat={selectedChat}
+          onSelectChat={setSelectedChat}
+        />
       </div>
 
       {/* 主聊天区域 */}
@@ -99,6 +103,7 @@ function App() {
           <ChatMessages />
           <ChatInput 
             isLoading={isLoading}
+            currentChat={selectedChat}
             onSend={() => {
               setIsLoading(true);
               setTimeout(() => setIsLoading(false), 2000);

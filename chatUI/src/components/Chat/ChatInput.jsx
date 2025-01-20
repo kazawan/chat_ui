@@ -1,11 +1,12 @@
 import DocIcon from '../icons/Doc_icon';
 import LoadingIcon from '../icons/loading_icon_ani';
 
-export default function ChatInput({ isLoading, onSend }) {
+export default function ChatInput({ isLoading, onSend, currentChat }) {
   return (
     <div className="p-4 bg-gray-200 sticky bottom-0">
       <div className="text-sm text-gray-500 mb-2">
-        ⚠️ctrl + i 聚焦到输入框.....
+        {currentChat ? `当前聊天：${currentChat}` : '请选择一个聊天'}
+        <span className="ml-4">⚠️ctrl + i 聚焦到输入框.....</span>
       </div>
       <div className="flex space-x-2">
         <button
