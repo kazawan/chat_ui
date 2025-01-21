@@ -1,12 +1,17 @@
-const { DataTypes } = require('sequelize');
-const db = require('../database');
-const User = require('./User');
+const { Model, DataTypes } = require('sequelize');
+const sequelize = require('../config');
 
-const ChatSession = db.define('ChatSession', {
+class ChatSession extends Model {}
+
+ChatSession.init({
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   title: {
     type: DataTypes.STRING,
@@ -16,19 +21,11 @@ const ChatSession = db.define('ChatSession', {
   lastMessageTime: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
-  },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: User,
-      key: 'id'
-    }
   }
+}, {
+  sequelize,
+  modelName: 'ChatSession',
+  tableName: 'chat_sessions'
 });
-
-// 建立与用户的关联关系
-ChatSession.belongsTo(User, { foreignKey: 'userId' });
-User.hasMany(ChatSession, { foreignKey: 'userId' });
 
 module.exports = ChatSession;

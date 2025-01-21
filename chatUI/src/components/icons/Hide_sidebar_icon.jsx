@@ -1,4 +1,4 @@
-export default function HideSidebarIcon({ width = 24, height = 24 }) {
+export default function HideSidebarIcon({ width = 20, height = 20 }) {
   return (
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
