@@ -36,7 +36,7 @@ chatUI/dist
 chatUI/.vite
 
 # 数据库
-backend/chat.db
+backend/data/database.sqlite
 
 # 其他
 deepseek_api.txt
