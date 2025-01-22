@@ -30,11 +30,19 @@ COPY backend/ .
 # 复制前端构建文件到后端 public 目录
 COPY --from=frontend-builder /frontend/dist ./public
 
-# 创建数据目录
-RUN mkdir -p /app/data 
+# 创建数据目录并复制数据库文件
+RUN mkdir -p /app/data
+
+
+
+# init database
+# RUN node /app/db/init.js
+# COPY backend/data/database.sqlite /app/data/
+# RUN chmod 777 /app/data/database.sqlite
 
 # 暴露端口
 EXPOSE ${PORT}
+
 
 # 启动命令
 CMD ["node", "server.js"] 
