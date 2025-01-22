@@ -39,4 +39,4 @@ chatUI/.vite
 backend/data/database.sqlite
 
 # 其他
-api.txt
+/api.txt
