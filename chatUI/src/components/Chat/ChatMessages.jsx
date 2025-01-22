@@ -143,7 +143,7 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
                             if (inline) {
                               return (
                                 <code
-                                  className="bg-gray-800 px-1 py-0.5 rounded font-mono text-sm"
+                                  className="bg-[#1e1e1e] px-1.5 py-0.5 rounded text-gray-300 font-mono text-sm"
                                   {...props}
                                 >
                                   {children}
@@ -151,53 +151,56 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
                               );
                             }
 
-  return (
-    <pre className="relative group">
-      <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-          }}
-          className="p-1 hover:bg-gray-700 rounded"
-          title="复制代码"
-        >
-          <svg
-            className="w-4 h-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-            />
-          </svg>
-        </button>
-      </div>
-      {language && (
-        <div className="absolute left-2 top-2 text-xs text-gray-400">
-          {language}
-        </div>
-      )}
-      <SyntaxHighlighter
-        language={language}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          marginTop: '0.5rem',
-          background: '#1a1a1a',
-          padding: '2rem 1rem 1rem',
-          borderRadius: '0.5rem',
-        }}
-        {...props}
-      >
-        {String(children).replace(/\n$/, '')}
-      </SyntaxHighlighter>
-    </pre>
+                            return (
+                              <div className="relative group my-4">
+                                <div className="flex items-center justify-between absolute w-full top-0 left-0 px-4 py-2 bg-gray-100 text-black text-xs rounded-none border-b border-gray-300">
+                                  <div className="font-mono">
+                                    {language}
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                                    }}
+                                    className="hover:text-gray-700 transition-colors flex items-center gap-1"
+                                    title="复制代码"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"
+                                      />
+                                    </svg>
+                                    <span>复制代码</span>
+                                  </button>
+                                </div>
+                                <div className="rounded-lg overflow-hidden">
+                                  <SyntaxHighlighter
+                                    language={language}
+                                    style={oneDark}
+                                    customStyle={{
+                                      margin: 0,
+                                      background: '#ffffff',
+                                      padding: '3rem 1rem 1rem',
+                                      borderRadius: '0.5rem',
+                                      fontSize: '0.875rem',
+                                      lineHeight: '1.5',
+                                      color: '#000000',
+                                    }}
+                                    {...props}
+                                  >
+                                    {String(children).replace(/\n$/, '')}
+                                  </SyntaxHighlighter>
+                                </div>
+                              </div>
                             );
-                          }
+                          },
                         }}
                       >
                         {message.content}
