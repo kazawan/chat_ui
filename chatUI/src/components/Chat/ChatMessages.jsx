@@ -20,6 +20,8 @@ SyntaxHighlighter.registerLanguage('sql', sql);
 const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) => {
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
+  const [regeneratingId, setRegeneratingId] = useState(null);
+  const [loadingDots, setLoadingDots] = useState('');
   
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -46,12 +48,21 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
     }
   };
 
-  const handleRegenerate = (message) => {
-    if (isLoading) {
+  const handleRegenerate = async (message) => {
+    if (regeneratingId) {
       showMessage('warning', '正在生成回复，请稍候...');
       return;
     }
-    onRegenerate(message.id);
+    console.log('开始重新生成，设置regeneratingId:', message.id);
+    setRegeneratingId(message.id);
+    try {
+      await onRegenerate(message.id);
+    } catch (error) {
+      console.error('重新生成失败:', error);
+    } finally {
+      console.log('重新生成完成，清除regeneratingId');
+      setRegeneratingId(null);
+    }
   };
 
   const scrollToBottom = () => {
@@ -62,20 +73,35 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    let timer;
+    if (regeneratingId) {
+      let count = 0;
+      timer = setInterval(() => {
+        count = (count + 1) % 4;
+        setLoadingDots('.'.repeat(count));
+      }, 500);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+      setLoadingDots('');
+    };
+  }, [regeneratingId]);
+
   if (!currentChat) {
-    return (
-      <div className="flex-1 p-4 bg-white overflow-y-auto max-w-full overflow-x-hidden">
-        <div className="bg-gray p-4 rounded-lg mb-4">
-          <div className="text-gradient text-sm text-center">
+  return (
+    <div className="flex-1 p-4 bg-white overflow-y-auto max-w-full overflow-x-hidden">
+      <div className="bg-gray p-4 rounded-lg mb-4">
+        <div className="text-gradient text-sm text-center">
             {localStorage.getItem('token') 
               ? '欢迎使用 Deepseek Chat，请选择或创建一个对话'
               : '欢迎使用 Deepseek Chat，请先登录'
             }
-          </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
@@ -118,7 +144,7 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
                               );
                             }
 
-                            return (
+  return (
                               <div className="relative group">
                                 <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button
@@ -176,17 +202,45 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleRegenerate(message)}
-                            disabled={isLoading}
+                            disabled={regeneratingId === message.id}
                             className={`${
-                              isLoading 
+                              regeneratingId === message.id 
                                 ? 'bg-gray-400 cursor-not-allowed' 
                                 : 'bg-green-500 hover:bg-green-600'
-                            } px-2 py-1 rounded transition-colors flex items-center space-x-1 text-white`}
+                            } px-2 py-1 rounded transition-colors flex items-center space-x-1 text-white min-w-[90px] justify-center`}
                           >
-                            <svg className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>{isLoading ? '生成中...' : '重新生成'}</span>
+                            {regeneratingId === message.id ? (
+                              <>
+                                <svg
+                                  className="w-3 h-3 animate-spin -ml-1 mr-1 text-white"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  style={{ animationDuration: '1s' }}
+                                >
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span className="inline-flex items-center">
+                                  生成中{loadingDots}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <svg 
+                                  className="w-3 h-3" 
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                                <span>重新生成</span>
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => handleCopy(message.content)}

@@ -16,8 +16,8 @@ const openai = new OpenAI({
 class AiService {
   static async generateChatResponse(messages) {
     try {
-      console.log('Using API Key:', config.deepseek.apiKey); // 调试用
-      console.log('Using Base URL:', config.deepseek.baseURL); // 调试用
+      // console.log('Using API Key:', config.deepseek.apiKey); // 调试用
+      // console.log('Using Base URL:', config.deepseek.baseURL); // 调试用
       
       const completion = await openai.chat.completions.create({
         model: 'deepseek-chat',  // 直接使用模型名称

@@ -316,17 +316,16 @@ function App() {
 
   // 添加重新生成消息的函数
   const handleRegenerate = async (messageId) => {
-    if (!selectedChat) return;
+    if (!selectedChat) return Promise.reject('没有选中的对话');
 
-    setIsLoading(true);
     try {
       // 找到要重新生成的消息及其对应的用户消息
       const messageIndex = chatMessages.findIndex(msg => msg.id === messageId);
-      if (messageIndex === -1) return;
+      if (messageIndex === -1) return Promise.reject('消息不存在');
 
       // 获取用户的原始消息
       const userMessage = chatMessages[messageIndex - 1];
-      if (!userMessage || userMessage.role !== 'user') return;
+      if (!userMessage || userMessage.role !== 'user') return Promise.reject('找不到对应的用户消息');
 
       // 删除之前的 AI 回复
       setChatMessages(prev => prev.filter((_, index) => index < messageIndex));
@@ -335,7 +334,8 @@ function App() {
       const aiMessage = {
         id: Date.now(),
         content: '',
-        role: 'assistant'
+        role: 'assistant',
+        createdAt: new Date().toISOString()
       };
       setChatMessages(prev => [...prev, aiMessage]);
 
@@ -389,11 +389,12 @@ function App() {
           }
         }
       }
+
+      return Promise.resolve();
     } catch (error) {
       console.error('重新生成回复失败:', error);
       showMessage('error', '重新生成回复失败');
-    } finally {
-      setIsLoading(false);
+      return Promise.reject(error);
     }
   };
 
@@ -405,7 +406,6 @@ function App() {
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => {
-          // 只有在用户已登录时才允许关闭登录框
           if (user) {
             setShowLoginModal(false);
           }
@@ -419,6 +419,7 @@ function App() {
           user={user}
           onClose={() => setIsSidebarOpen(false)}
           onLogout={handleLogout}
+          isSidebarOpen={isSidebarOpen}
         />
         <ChatList 
           chats={chats}
@@ -486,7 +487,8 @@ function App() {
                 const userMessage = {
                   id: Date.now(),
                   content,
-                  role: 'user'
+                  role: 'user',
+                  createdAt: new Date().toISOString()
                 };
                 setChatMessages(prev => [...prev, userMessage]);
 
@@ -494,7 +496,8 @@ function App() {
                 const aiMessage = {
                   id: Date.now() + 1,
                   content: '',
-                  role: 'assistant'
+                  role: 'assistant',
+                  createdAt: new Date().toISOString()
                 };
                 setChatMessages(prev => [...prev, aiMessage]);
 

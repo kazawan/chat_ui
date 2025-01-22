@@ -1,1 +1,5 @@
-sk-97b928cd53174d60b46c643a57378453
+# backend .env.example
+
+JWT_SECRET=cat
+DEEPSEEK_API_KEY=sk-97b928cd53174d60b46c643a57378453
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1

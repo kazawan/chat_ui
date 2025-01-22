@@ -107,6 +107,17 @@ exports.sendMessage = async (req, res) => {
       content: msg.content
     }));
 
+    // 打印上下文信息
+    // console.log('=== 发送消息上下文 ===');
+    // console.log('会话ID:', sessionId);
+    // console.log('用户ID:', req.user.id);
+    // console.log('历史消息数量:', messages.length);
+    // console.log('历史消息:');
+    // messages.forEach((msg, index) => {
+    //   console.log(`[${index + 1}] ${msg.role}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`);
+    // });
+    // console.log('==================');
+
     // 设置响应头，支持流式输出
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -209,5 +220,150 @@ exports.updateSessionTitle = async (req, res) => {
     res.json(session);
   } catch (error) {
     res.status(500).json({ message: '更新会话标题失败', error: error.message });
+  }
+};
+
+// 重新生成消息
+exports.regenerateMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const sessionId = req.params.sessionId;
+
+  try {
+    // 验证会话归属权
+    const session = await ChatSession.findOne({
+      where: {
+        id: sessionId,
+        userId: req.user.id
+      }
+    });
+
+    if (!session) {
+      return res.status(404).json({ message: '会话不存在' });
+    }
+
+    // 获取要重新生成的消息
+    const message = await ChatMessage.findOne({
+      where: {
+        id: messageId,
+        sessionId,
+        role: 'assistant'
+      }
+    });
+
+    if (!message) {
+      return res.status(404).json({ message: '消息不存在' });
+    }
+
+    // 获取历史消息用于上下文
+    const sessionMessages = await ChatMessage.findAll({
+      where: { sessionId },
+      order: [['createdAt', 'ASC']],
+      limit: 20
+    });
+
+    // 格式化消息历史
+    const messages = sessionMessages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    // 打印重新生成的上下文信息
+    console.log('=== 重新生成消息上下文 ===');
+    console.log('会话ID:', sessionId);
+    console.log('消息ID:', messageId);
+    console.log('用户ID:', req.user.id);
+    console.log('历史消息数量:', messages.length);
+    console.log('历史消息:');
+    messages.forEach((msg, index) => {
+      console.log(`[${index + 1}] ${msg.role}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`);
+    });
+    console.log('==================');
+
+    // 设置响应头，支持流式输出
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    let aiMessageContent = '';
+
+    try {
+      const stream = await AiService.generateChatResponse(messages);
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          aiMessageContent += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // 更新 AI 消息内容
+      await message.update({ content: aiMessageContent });
+
+      res.write('data: [DONE]\n\n');
+    } catch (error) {
+      console.error('AI 响应错误:', error);
+      res.write(`data: ${JSON.stringify({ error: '生成回复时发生错误' })}\n\n`);
+    }
+
+    res.end();
+  } catch (error) {
+    console.error('重新生成消息错误:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: '重新生成消息失败', error: error.message });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: '重新生成消息失败' })}\n\n`);
+      res.end();
+    }
+  }
+};
+
+// 获取提示卡片
+exports.getPromptCards = async (req, res) => {
+  try {
+    // 这里定义一些示例提示卡片
+    const promptCards = [
+      {
+        id: 1,
+        title: '写作助手',
+        prompts: [
+          '帮我写一篇关于人工智能的文章',
+          '如何提高我的写作技巧？',
+          '帮我修改一下这段文字的语法和表达'
+        ]
+      },
+      {
+        id: 2,
+        title: '代码专家',
+        prompts: [
+          '解释一下这段代码是什么意思',
+          '帮我优化这个算法的性能',
+          '如何解决这个编程问题？'
+        ]
+      },
+      {
+        id: 3,
+        title: '学习顾问',
+        prompts: [
+          '推荐一些学习编程的资源',
+          '如何制定有效的学习计划？',
+          '帮我分析一下这个知识点'
+        ]
+      },
+      {
+        id: 4,
+        title: '创意激发',
+        prompts: [
+          '给我一些创新的项目想法',
+          '如何提高创造力？',
+          '帮我头脑风暴一个主题'
+        ]
+      }
+    ];
+
+    res.json(promptCards);
+  } catch (error) {
+    console.error('获取提示卡片失败:', error);
+    res.status(500).json({ message: '获取提示卡片失败', error: error.message });
   }
 }; 
