@@ -1,24 +1,40 @@
-# Backend Dockerfile
-FROM node:18-alpine
+# 构建前端
+FROM node:18-alpine as frontend-builder
+WORKDIR /frontend
 
+# 设置构建参数
+ARG VITE_BASE_URL
+ENV VITE_BASE_URL=${VITE_BASE_URL}
+
+# 先复制前端的 package.json
+COPY chatUI/package*.json ./
+RUN npm install
+# 复制前端源代码
+COPY chatUI/ .
+# 构建时传入环境变量
+RUN VITE_BASE_URL=${VITE_BASE_URL} npm run build
+
+# 后端运行环境
+FROM node:18-alpine
 WORKDIR /app
 
+# 设置环境变量
+ARG PORT
+ENV PORT=${PORT}
+
+# 复制后端文件
 COPY backend/package*.json ./
-COPY docker/.env .
-RUN npm install --registry=https://registry.npmmirror.com
-RUN npm install dotenv-cli --registry=https://registry.npmmirror.com
+RUN npm install --production
+COPY backend/ .
 
-COPY backend .
+# 复制前端构建文件到后端 public 目录
+COPY --from=frontend-builder /frontend/dist ./public
 
-# Create public directory and copy frontend assets
-RUN mkdir -p public
-VOLUME /app/public
+# 创建数据目录
+RUN mkdir -p /app/data 
 
-# Copy .env file
-COPY docker/.env .
+# 暴露端口
+EXPOSE ${PORT}
 
-ENV NODE_ENV=production
-
-EXPOSE $PORT
-
-CMD ["npx", "dotenv", "-e", ".env", "node", "server.js"]
+# 启动命令
+CMD ["node", "server.js"] 

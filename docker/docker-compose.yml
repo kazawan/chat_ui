@@ -3,28 +3,19 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ..
+      context: ../
       dockerfile: docker/Dockerfile.backend
+      args:
+        - VITE_BASE_URL=${VITE_BASE_URL}
+        - PORT=${PORT}
     ports:
       - "${PORT}:${PORT}"
     volumes:
       - ../backend/data:/app/data
-      - frontend_dist:/app/public
     env_file:
       - .env
-
-  frontend:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.frontend
-    volumes:
-      - frontend_dist:/shared/dist
     environment:
-      - VITE_BASE_URL=${VITE_BASE_URL}
-    env_file:
-      - .env
-    depends_on:
-      - backend
+      - NODE_ENV=production
 
 volumes:
-  frontend_dist:
+  frontend_build: 
