@@ -1,0 +1,24 @@
+# Backend Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY backend/package*.json ./
+COPY docker/.env .
+RUN npm install --registry=https://registry.npmmirror.com
+RUN npm install dotenv-cli --registry=https://registry.npmmirror.com
+
+COPY backend .
+
+# Create public directory and copy frontend assets
+RUN mkdir -p public
+VOLUME /app/public
+
+# Copy .env file
+COPY docker/.env .
+
+ENV NODE_ENV=production
+
+EXPOSE $PORT
+
+CMD ["npx", "dotenv", "-e", ".env", "node", "server.js"]

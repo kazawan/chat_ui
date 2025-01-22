@@ -25,6 +25,11 @@
 
 
 
+配置docker
 
-
-
+- 先部署后端
+- 挂载./backend/data/ 持久化数据库
+- 前端在docker容器中打包,然后复制dist的文件到后端容器中的public中 
+- 项目环境变量均使用./docker/.env文件
+- 注意前端fetch api 的baseurl 要在./docker/.env中获取
+  

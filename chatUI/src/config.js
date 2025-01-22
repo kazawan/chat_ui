@@ -1,7 +1,5 @@
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 const config = {
-  apiBaseUrl: isDevelopment ? 'http://localhost:3001' : '/api',
+  apiBaseUrl: import.meta.env.VITE_BASE_URL || 'http://localhost:3001',
   // 其他配置项...
 };
 

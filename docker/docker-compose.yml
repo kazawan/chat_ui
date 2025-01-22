@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ../backend/data:/app/data
+      - frontend_dist:/app/public
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    volumes:
+      - frontend_dist:/shared/dist
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+volumes:
+  frontend_dist:
