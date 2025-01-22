@@ -1,20 +1,21 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        // 如果后端API不包含 /api 前缀，可以重写路径
-        // rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  },
-  base:'./',
-  
+export default defineConfig(({ mode }) => {
+  // 加载以VITE_开头的环境变量
+  const env = loadEnv(mode, process.cwd())
 
+  return {
+    plugins: [react()],
+    server: {
+      port: 8080,
+      proxy: {
+        '/api': {
+          target: env.VITE_BASE_URL || 'http://localhost:3001',
+          changeOrigin: true,
+        }
+      }
+    },
+    base: './',
+  }
 })

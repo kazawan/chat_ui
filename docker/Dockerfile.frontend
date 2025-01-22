@@ -14,5 +14,5 @@ RUN npx dotenv -e .env npm run build
 # Copy build artifacts to shared volume
 FROM alpine:latest
 RUN mkdir -p /app/dist
-COPY --from=build /app/dist /app/dist
+COPY --from=build /app/dist /shared/dist
 VOLUME /app/dist

@@ -19,6 +19,8 @@ services:
       dockerfile: docker/Dockerfile.frontend
     volumes:
       - frontend_dist:/shared/dist
+    environment:
+      - VITE_BASE_URL=${VITE_BASE_URL}
     env_file:
       - .env
     depends_on:

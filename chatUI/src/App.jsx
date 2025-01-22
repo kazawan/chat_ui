@@ -36,6 +36,7 @@ function App() {
   useEffect(() => {
     // 页面加载时显示欢迎消息
     showMessage('info', '欢迎使用Deepseek Chat UI！');
+    
   }, []);
 
   useEffect(() => {
