@@ -8,7 +8,7 @@ ENV VITE_BASE_URL=${VITE_BASE_URL}
 
 # 先复制前端的 package.json
 COPY chatUI/package*.json ./
-RUN npm install
+RUN npm install --registry=https://registry.npmmirror.com
 # 复制前端源代码
 COPY chatUI/ .
 # 构建时传入环境变量
@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y \
 # 重新编译native模块
 # RUN npm install better-sqlite3
 # RUN npm install --production
-RUN npm install
+RUN npm install --registry=https://registry.npmmirror.com
 
 # 复制其余文件
 COPY backend/ .
