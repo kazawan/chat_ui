@@ -16,8 +16,8 @@ class DB {
         fs.mkdirSync(dataDir, { recursive: true });
       }
 
-      this.db = new Database(this.dbPath, { 
-        verbose: false
+      this.db = new Database(this.dbPath, {
+        verbose: null
       });
       
       // 启用外键约束
