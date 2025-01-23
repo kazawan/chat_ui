@@ -4,7 +4,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const openai = require('openai');
 const db = require('./db/database');
-const { initializeDatabase } = require('./db/models');
+const initializeDatabase = require('./db/initialize');
 const User = require('./db/models/User');
 const ChatSession = require('./db/models/ChatSession');
 const ChatMessage = require('./db/models/ChatMessage');
@@ -30,11 +30,9 @@ app.use('/api/chat', chatRoutes);
 const PORT = process.env.PORT || 3001;
 
 // 初始化数据库
-initializeDatabase().then(() => {
-  // 启动服务器
-  app.listen(PORT, () => {
-    console.log(`服务器运行在 http://localhost:${PORT}`);
-  });
-}).catch(error => {
-  console.error('服务器启动失败:', error);
+initializeDatabase();
+
+// 启动服务器
+app.listen(PORT, () => {
+  console.log(`服务器运行在 http://localhost:${PORT}`);
 });

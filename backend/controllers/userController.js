@@ -1,7 +1,7 @@
 const User = require('../db/models/User');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
-const bcrypt = require('bcryptjs');
+const db = require('../db/database');
 
 // 用户注册
 exports.register = async (req, res) => {
@@ -16,10 +16,7 @@ exports.register = async (req, res) => {
     }
 
     // 检查用户名是否已存在
-    const existingUser = await User.findOne({
-      where: { username }
-    });
-
+    const existingUser = User.findByUsername(username);
     if (existingUser) {
       return res.status(400).json({
         message: '用户名已存在'
@@ -27,10 +24,7 @@ exports.register = async (req, res) => {
     }
 
     // 检查邮箱是否已存在
-    const existingEmail = await User.findOne({
-      where: { email }
-    });
-
+    const existingEmail = User.findByEmail(email);
     if (existingEmail) {
       return res.status(400).json({
         message: '邮箱已被注册'
@@ -38,11 +32,14 @@ exports.register = async (req, res) => {
     }
 
     // 创建新用户
-    const user = await User.create({
+    const userId = User.create({
       username,
-      password, // 密码会通过模型的 beforeCreate 钩子自动加密
+      password,
       email
     });
+
+    // 获取新创建的用户
+    const user = User.findById(userId);
 
     // 生成 JWT token
     const token = jwt.sign(
@@ -83,10 +80,7 @@ exports.login = async (req, res) => {
     }
 
     // 查找用户
-    const user = await User.findOne({
-      where: { username }
-    });
-
+    const user = User.findByUsername(username);
     if (!user) {
       return res.status(401).json({
         message: '用户名或密码错误'
@@ -94,17 +88,12 @@ exports.login = async (req, res) => {
     }
 
     // 验证密码
-    const isValidPassword = await user.validatePassword(password);
+    const isValidPassword = await User.validatePassword(user, password);
     if (!isValidPassword) {
       return res.status(401).json({
         message: '用户名或密码错误'
       });
     }
-
-    // 更新最后登录时间
-    await user.update({
-      lastLoginAt: new Date()
-    });
 
     // 生成 JWT token
     const token = jwt.sign(
@@ -119,8 +108,7 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email,
-        lastLoginAt: user.lastLoginAt
+        email: user.email
       }
     });
   } catch (error) {
@@ -135,17 +123,18 @@ exports.login = async (req, res) => {
 // 获取用户信息
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'username', 'email', 'lastLoginAt']
-    });
-
+    const user = User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({
         message: '用户不存在'
       });
     }
 
-    res.json(user);
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email
+    });
   } catch (error) {
     console.error('获取用户信息错误:', error);
     res.status(500).json({
@@ -159,12 +148,32 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findByPk(req.user.id);
+    
+    // 验证是否有要更新的字段
+    if (!email && !password) {
+      return res.status(400).json({
+        message: '至少需要提供一个要更新的字段'
+      });
+    }
 
-    if (email) user.email = email;
-    if (password) user.password = password;
+    // 如果要更新邮箱，检查是否已被使用
+    if (email) {
+      const existingEmail = User.findByEmail(email);
+      if (existingEmail && existingEmail.id !== req.user.id) {
+        return res.status(400).json({
+          message: '邮箱已被注册'
+        });
+      }
+    }
 
-    await user.save();
+    // 更新用户信息
+    User.update(req.user.id, {
+      email,
+      password
+    });
+
+    // 获取更新后的用户信息
+    const user = User.findById(req.user.id);
 
     res.json({
       message: '更新成功',
@@ -175,6 +184,10 @@ exports.updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: '更新失败', error: error.message });
+    console.error('更新用户信息失败:', error);
+    res.status(500).json({ 
+      message: '更新失败', 
+      error: error.message 
+    });
   }
-}; 
+};

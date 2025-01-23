@@ -1,12 +1,51 @@
-const { Sequelize } = require('sequelize');
+const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '..', 'data', 'database.sqlite');
+class DB {
+  constructor() {
+    this.dbPath = path.resolve(__dirname, '..', 'data', 'database.sqlite');
+    this.db = null;
+  }
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  logging: false, // 设置为 true 可以在控制台看到 SQL 查询
-});
+  connect() {
+    try {
+      // 确保数据目录存在
+      const dataDir = path.dirname(this.dbPath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
 
-module.exports = sequelize;
+      this.db = new Database(this.dbPath, { 
+        verbose: console.log 
+      });
+      
+      // 启用外键约束
+      this.db.pragma('foreign_keys = ON');
+      
+      console.log('成功连接到数据库，路径:', this.dbPath);
+    } catch (error) {
+      console.error('连接数据库失败:', error);
+      throw error;
+    }
+  }
+
+  prepare(sql) {
+    if (!this.db) this.connect();
+    return this.db.prepare(sql);
+  }
+
+  transaction(cb) {
+    if (!this.db) this.connect();
+    return this.db.transaction(cb);
+  }
+
+  close() {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+  }
+}
+
+module.exports = new DB();

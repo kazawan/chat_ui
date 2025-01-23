@@ -11,11 +11,11 @@ services:
     ports:
       - "${PORT}:${PORT}"
     volumes:
-      - C:/Users/a/Desktop/newchatui/backend/data:/app/data
+      - sqlite_data:/app/data/
     env_file:
       - .env
     environment:
       - NODE_ENV=production
 
 volumes:
-  sqlite_data: 
+  sqlite_data:

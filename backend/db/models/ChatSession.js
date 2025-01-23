@@ -1,31 +1,60 @@
-const { Model, DataTypes } = require('sequelize');
-const sequelize = require('../config');
+const db = require('../database');
 
-class ChatSession extends Model {}
-
-ChatSession.init({
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  userId: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: '新对话'
-  },
-  lastMessageTime: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+class ChatSession {
+  static create({ userId, title }) {
+    const sql = `
+      INSERT INTO chat_sessions (userId, title, lastMessageTime)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+    `;
+    const params = [userId, title];
+    const result = db.prepare(sql).run(params);
+    return result.lastInsertRowid;
   }
-}, {
-  sequelize,
-  modelName: 'ChatSession',
-  tableName: 'chat_sessions'
-});
+
+  static findByUserId(userId) {
+    const sql = `
+      SELECT
+        cs.*,
+        (SELECT content FROM chat_messages
+         WHERE sessionId = cs.id
+         AND role = 'assistant'
+         ORDER BY createdAt DESC
+         LIMIT 1) as lastMessage
+      FROM chat_sessions cs
+      WHERE cs.userId = ?
+      ORDER BY cs.lastMessageTime DESC
+    `;
+    return db.prepare(sql).all(userId);
+  }
+
+  static findById(id) {
+    const sql = `
+      SELECT
+        cs.*,
+        (SELECT content FROM chat_messages
+         WHERE sessionId = cs.id
+         ORDER BY createdAt DESC
+         LIMIT 1) as lastMessage
+      FROM chat_sessions cs
+      WHERE cs.id = ?
+    `;
+    return db.prepare(sql).get(id);
+  }
+
+  static update(id, { title }) {
+    const sql = 'UPDATE chat_sessions SET title = ? WHERE id = ?';
+    db.prepare(sql).run(title, id);
+  }
+
+  static updateLastMessageTime(id) {
+    const sql = 'UPDATE chat_sessions SET lastMessageTime = CURRENT_TIMESTAMP WHERE id = ?';
+    db.prepare(sql).run(id);
+  }
+
+  static delete(id) {
+    const sql = 'DELETE FROM chat_sessions WHERE id = ?';
+    db.prepare(sql).run(id);
+  }
+}
 
 module.exports = ChatSession;

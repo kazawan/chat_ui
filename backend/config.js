@@ -1,11 +1,14 @@
 require('dotenv').config();
 
 module.exports = {
-  jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+  port: process.env.PORT || 3001,
+  jwtSecret: process.env.JWT_SECRET || 'cat',
+  nodeEnv: process.env.NODE_ENV || 'development',
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY,
-    baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat'
+    baseUrl: process.env.DEEPSEEK_BASE_URL
   },
-  // 其他配置项...
+  db: {
+    path: process.env.DB_PATH || 'data/database.sqlite'
+  }
 }; 

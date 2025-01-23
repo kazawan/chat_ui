@@ -1,0 +1,4 @@
+# 忽略数据库文件但保留目录
+/data/*.sqlite
+/data/*.sqlite-journal
+!/data/.gitkeep 

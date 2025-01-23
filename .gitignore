@@ -30,8 +30,7 @@ lerna-debug.log*
 docker/.env
 
 # 保留backend/data目录但忽略内容
-backend/data/*
-!backend/data/
+
 
 # 构建输出
 .cache
@@ -41,7 +40,7 @@ chatUI/dist
 chatUI/.vite
 
 # 数据库
-backend/data/database.sqlite
+
 
 # 其他
 /api.txt
