@@ -40,7 +40,20 @@ const ChatMessages = ({ messages = [], currentChat, onRegenerate, isLoading }) =
 
   const handleCopy = async (content) => {
     try {
-      await navigator.clipboard.writeText(content);
+      // 尝试使用现代Clipboard API
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        // 回退方案：使用document.execCommand
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       showMessage('success', '复制成功！');
     } catch (err) {
       console.error('复制失败:', err);

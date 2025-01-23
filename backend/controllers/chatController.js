@@ -35,8 +35,6 @@ exports.createSession = async (req, res) => {
 // 获取用户的所有聊天会话
 exports.getSessions = async (req, res) => {
   try {
-    console.log('获取用户会话, 用户ID:', req.user.id);
-
     const sessions = ChatSession.findByUserId(req.user.id);
     
     // 格式化返回数据
@@ -52,7 +50,6 @@ exports.getSessions = async (req, res) => {
       }] : []
     }));
 
-    console.log('找到的会话数量:', sessions.length);
     res.json(formattedSessions);
   } catch (error) {
     console.error('获取会话列表失败:', error);

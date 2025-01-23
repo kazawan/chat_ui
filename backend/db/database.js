@@ -17,7 +17,7 @@ class DB {
       }
 
       this.db = new Database(this.dbPath, { 
-        verbose: console.log 
+        verbose: false
       });
       
       // 启用外键约束

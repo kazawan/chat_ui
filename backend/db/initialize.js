@@ -38,7 +38,6 @@ function initializeDatabase() {
     const dataDir = path.resolve(__dirname, '..', 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
-      console.log('创建数据目录:', dataDir);
     }
 
     // 连接数据库
@@ -49,7 +48,6 @@ function initializeDatabase() {
     const initDb = db.transaction(() => {
       for (const sql of initSQL) {
         db.prepare(sql).run();
-        console.log('执行SQL成功:', sql.substring(0, 50) + '...');
       }
     });
 
