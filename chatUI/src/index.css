@@ -1,85 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-@keyframes slide-in {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0) translateX(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out forwards;
-}
-
-.text-gradient {
-  background: linear-gradient(90deg, #8B5CF6, #EC4899, #F59E0B);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-
-body {
-  @apply bg-gray text-black;
+@import "tailwindcss";
+:root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #ffffff;
+ 
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  @apply border-black rounded;
-}
 
-.markdown-body {
-  color: white;
-}
-
-.markdown-body pre {
-  background-color: #1a1a1a;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-}
-
-.markdown-body code {
-  background-color: #2d2d2d;
-  padding: 0.2em 0.4em;
-  border-radius: 0.25rem;
-  font-family: monospace;
-}
-
-.markdown-body p {
-  margin: 0.5em 0;
-}
-
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
-.markdown-body blockquote {
-  border-left: 4px solid #4a4a4a;
-  margin: 0;
-  padding-left: 1em;
-  color: #a0a0a0;
-}
