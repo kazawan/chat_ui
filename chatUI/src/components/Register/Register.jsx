@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import '../Login/Login.css';
+import { register } from '../../services/authService';
+import { messageService } from '../../services/messageService';
+import '../Auth/auth.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,7 +12,6 @@ const Register = () => {
     confirmPassword: '',
     email: ''
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -23,36 +24,37 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     // 表单验证
     if (!formData.username.trim() || !formData.password || !formData.email) {
-      setError('请填写所有必填字段');
+      messageService.warning('请填写所有必填字段');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('两次输入的密码不一致');
+      messageService.warning('两次输入的密码不一致');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('密码长度至少为6个字符');
+      messageService.warning('密码长度至少为6个字符');
       return;
     }
 
     setLoading(true);
 
     try {
-      // 模拟注册请求
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 调用真实注册API
+      await register(formData.username, formData.password, formData.email);
 
-      // 模拟成功注册
-      alert('注册成功！请登录');
+      // 注册成功提示
+      messageService.success('注册成功，请登录');
+      
+      // 注册成功，跳转到登录页
       navigate('/login');
       
     } catch (err) {
-      setError(err.message || '注册过程中发生错误');
+      messageService.error(err.message || '注册失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -118,8 +120,6 @@ const Register = () => {
               required
             />
           </div>
-
-          {error && <div className="error-message">{error}</div>}
 
           <button 
             type="submit" 

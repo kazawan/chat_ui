@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { RiHome2Line, RiMessage2Line, RiFileTextLine, RiInformationLine, RiUser3Line, RiSettings4Line, RiLogoutBoxRLine } from "react-icons/ri";
+import { messageService } from '../../services/messageService';
 
 // 统一的样式配置
 const styles = {
@@ -94,6 +95,7 @@ const NavigationBar = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    messageService.info('已安全退出登录');
     navigate('/login');
   };
 
@@ -123,21 +125,21 @@ const NavigationBar = () => {
                 objectFit: 'contain'
               }}
             />
-            <span  className={styles.common.pageTitle}>{currentPageTitle}</span>
+            <span className={styles.common.pageTitle}>{currentPageTitle}</span>
           </div>
 
           {/* 右侧用户信息 */}
           <div className="flex items-center space-x-3 relative">
-            <span className="text-sm" style={{ color: styles.colors.text }}>{user?.name || 'Guest'}</span>
+            <span className="text-sm" style={{ color: styles.colors.text }}>{user?.username || 'Guest'}</span>
             <button
               className="focus:outline-none"
               onClick={handleUserMenuClick}
             >
-              <img
-                src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=guest"}
-                alt="avatar"
-                className="h-8 w-8 rounded-full object-cover hover:ring-2 hover:ring-gray-300 transition-all duration-200"
-              />
+              <div
+                className="h-8 w-8 rounded-full flex items-center justify-center bg-blue-500 text-white font-medium hover:ring-2 hover:ring-gray-300 transition-all duration-200"
+              >
+                {user ? user.username.charAt(0).toUpperCase() : 'G'}
+              </div>
             </button>
 
             {/* 用户下拉菜单 */}
@@ -166,7 +168,7 @@ const NavigationBar = () => {
               >
                 {/* 用户信息 */}
                 <div className="px-4 py-2 border-b" style={{ borderColor: styles.colors.border }}>
-                  <p className="text-sm font-medium" style={{ color: styles.colors.text }}>{user?.name || 'Guest'}</p>
+                  <p className="text-sm font-medium" style={{ color: styles.colors.text }}>{user?.username || 'Guest'}</p>
                   <p className="text-xs text-gray-500">{user?.email || 'guest@example.com'}</p>
                 </div>
 
@@ -200,6 +202,7 @@ const NavigationBar = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       handleLogout();
+                      setShowUserMenu(false);
                     }}
                     className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors duration-150 flex items-center gap-2"
                   >

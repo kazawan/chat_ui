@@ -9,10 +9,12 @@ import About from './components/About/About';
 import UserSettings from './components/Settings/UserSettings';
 import SystemSettings from './components/Settings/SystemSettings';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import MessageContainer from './components/Message/MessageContainer';
 
 function App() {
   return (
     <Router>
+      <MessageContainer />
       <Routes>
         {/* 登录和注册路由 - 无需保护 */}
         <Route path="/login" element={<Login />} />
@@ -60,46 +62,46 @@ function App() {
             </ProtectedRoute>
           } 
         />
-{/* 关于页面 */}
-<Route
-  path="/about"
-  element={
-    <ProtectedRoute>
-      <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
-        <NavigationBar />
-        <About />
-      </div>
-    </ProtectedRoute>
-  }
-/>
+        
+        {/* 关于页面 */}
+        <Route
+          path="/about"
+          element={
+            <ProtectedRoute>
+              <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
+                <NavigationBar />
+                <About />
+              </div>
+            </ProtectedRoute>
+          }
+        />
 
-{/* 个人设置页面 */}
-<Route
-  path="/settings/user"
-  element={
-    <ProtectedRoute>
-      <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
-        <NavigationBar />
-        <UserSettings />
-      </div>
-    </ProtectedRoute>
-  }
-/>
+        {/* 个人设置页面 */}
+        <Route
+          path="/settings/user"
+          element={
+            <ProtectedRoute>
+              <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
+                <NavigationBar />
+                <UserSettings />
+              </div>
+            </ProtectedRoute>
+          }
+        />
 
-{/* 系统设置页面 */}
-<Route
-  path="/settings/system"
-  element={
-    <ProtectedRoute>
-      <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
-        <NavigationBar />
-        <SystemSettings />
-      </div>
-    </ProtectedRoute>
-  }
-/>
+        {/* 系统设置页面 */}
+        <Route
+          path="/settings/system"
+          element={
+            <ProtectedRoute>
+              <div className="h-screen flex flex-col overflow-hidden bg-gray-900">
+                <NavigationBar />
+                <SystemSettings />
+              </div>
+            </ProtectedRoute>
+          }
+        />
 
-{/* 默认重定向到聊天页面 */}
         {/* 默认重定向到聊天页面 */}
         <Route 
           path="/" 

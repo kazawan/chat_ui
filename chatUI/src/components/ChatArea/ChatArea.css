@@ -204,6 +204,7 @@
   line-height: 1.5;
   outline: none;
   overflow-y: auto;
+  color: #000000;
 }
 
 .input-container textarea::placeholder {

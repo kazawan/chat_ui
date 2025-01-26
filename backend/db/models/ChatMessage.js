@@ -1,10 +1,11 @@
 const db = require('../database');
 
 class ChatMessage {
+
   static create({ sessionId, role, content }) {
     const sql = `
-      INSERT INTO chat_messages (sessionId, role, content, updatedAt)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO chat_messages (sessionId, role, content, createdAt, updatedAt)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `;
     const params = [sessionId, role, content];
     const result = db.prepare(sql).run(params);

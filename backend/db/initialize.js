@@ -13,7 +13,7 @@ const initSQL = [
   );`,
 
   `CREATE TABLE IF NOT EXISTS chat_sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     userId INTEGER NOT NULL,
     title TEXT NOT NULL,
     lastMessageTime DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -23,7 +23,7 @@ const initSQL = [
 
   `CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sessionId INTEGER NOT NULL,
+    sessionId TEXT NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -2,6 +2,8 @@ const User = require('../db/models/User');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const db = require('../db/database');
+const ChatSession = require('../db/models/ChatSession');
+const ChatMessage = require('../db/models/ChatMessage');
 
 // 用户注册
 exports.register = async (req, res) => {
@@ -40,6 +42,19 @@ exports.register = async (req, res) => {
 
     // 获取新创建的用户
     const user = User.findById(userId);
+
+    // 创建欢迎对话
+    const chatSessionId = ChatSession.create({
+      userId: user.id,
+      title: '欢迎对话'
+    });
+
+    // 添加欢迎消息
+    ChatMessage.create({
+      sessionId: chatSessionId,
+      role: 'assistant',
+      content: `你好 ${username}！👋\n\n欢迎使用我们的聊天系统。我是你的AI助手，可以为你提供以下帮助：\n\n1. 回答问题和解决问题\n2. 提供信息和建议\n3. 协助学习和工作\n4. 闲聊交谈\n\n有什么我可以帮你的吗？`
+    });
 
     // 生成 JWT token
     const token = jwt.sign(

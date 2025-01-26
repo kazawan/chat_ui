@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { mockLogin } from '../../services/mockAuth';
-import './Login.css';
+import { login } from '../../services/authService';
+import { messageService } from '../../services/messageService';
+import '../Auth/auth.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ const Login = () => {
     password: '',
     rememberMe: false
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -23,31 +23,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
     // 表单验证
     if (!formData.username.trim() || !formData.password) {
-      setError('请输入用户名和密码');
+      messageService.warning('请输入用户名和密码');
       return;
     }
 
     setLoading(true);
     
     try {
-      // 使用模拟登录服务
-      const { token, user } = await mockLogin(formData.username, formData.password);
+      // 使用真实登录服务
+      const response = await login(formData.username, formData.password);
 
-      // 存储token和用户信息
-      localStorage.setItem('token', token);
-      if (formData.rememberMe) {
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-
+      // 登录成功提示
+      messageService.success('登录成功');
+      
       // 登录成功后跳转到聊天页面
       navigate('/chat');
       
     } catch (err) {
-      setError(err.message || '登录过程中发生错误');
+      messageService.error(err.message || '登录失败，请检查用户名和密码');
     } finally {
       setLoading(false);
     }
@@ -70,7 +66,7 @@ const Login = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="请输入用户名（admin 或 test）"
+              placeholder="请输入用户名"
               autoComplete="username"
             />
           </div>
@@ -83,7 +79,7 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="请输入密码（admin123 或 test123）"
+              placeholder="请输入密码"
               autoComplete="current-password"
             />
           </div>
@@ -98,8 +94,6 @@ const Login = () => {
             />
             <label htmlFor="rememberMe">记住我</label>
           </div>
-
-          {error && <div className="error-message">{error}</div>}
 
           <button 
             type="submit" 

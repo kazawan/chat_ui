@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
@@ -13,22 +13,31 @@ import {
   RiDeleteBinLine
 } from "react-icons/ri";
 import ConversationList from '../ConversationList/ConversationList';
+import { useChatStore, chatService } from '../../services/chatService';
+import { messageService } from '../../services/messageService';
 
 const ChatArea = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+  const messagesEndRef = useRef(null);
 
-  const handleExportChat = () => {
-    setIsDropdownOpen(false);
-    // TODO: 实现导出聊天记录逻辑
-    console.log('导出聊天记录');
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleDeleteConversation = () => {
-    setIsDropdownOpen(false);
-    // TODO: 实现删除对话逻辑
-    console.log('删除对话');
-  };
+  // 使用chatStore管理状态
+  const { 
+    messages, 
+    currentSession,
+    loading,
+    setCurrentSession,
+    setMessages 
+  } = useChatStore();
+
+  // markdown解析器
   const md = useRef(new MarkdownIt({
     breaks: true,
     linkify: true,
@@ -39,43 +48,123 @@ const ChatArea = () => {
           return hljs.highlight(str, { language: lang }).value;
         } catch (__) {}
       }
-      return ''; // use external default escaping
+      return '';
     }
   }));
 
-  const [messages, setMessages] = useState([
-    { id: 1, type: 'user', content: '你好，请给我一个简单的Python Hello World示例。' },
-    { id: 2, type: 'ai', content: `当然可以！以下是一个简单的 Python 函数，用于打印 "Hello, World!"：
-
-\`\`\`python
-def print_hello_world():
-    # 这个函数打印 "Hello, World!"
-    print("Hello, World!")
-
-# 调用函数
-print_hello_world()
-\`\`\`
-
-在这个示例中，我们定义了一个名为 \`print_hello_world\` 的函数。该函数使用 \`print\` 语句输出 "Hello, World!"。然后，我们调用这个函数来执行打印操作。
-
-你可以将这段代码复制到你的 Python 环境中运行，看看效果。` },
-  ]);
-
-  const [inputMessage, setInputMessage] = useState('');
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
-
-    const newMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      content: inputMessage,
-    };
-
-    setMessages([...messages, newMessage]);
-    setInputMessage('');
+  // 创建新对话
+  const handleNewChat = async () => {
+    try {
+      await chatService.createSession();
+      setInputMessage('');
+      messageService.success('新对话已创建');
+    } catch (error) {
+      messageService.error(error.message);
+    }
   };
+
+  // 导出聊天记录
+  const handleExportChat = () => {
+    setIsDropdownOpen(false);
+    if (!currentSession) return;
+
+    const chatContent = messages
+      .map(msg => `${msg.role === 'user' ? '用户' : 'AI'}：${msg.content}`)
+      .join('\n\n');
+
+    const blob = new Blob([chatContent], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `对话记录_${new Date().toLocaleDateString()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // 删除当前对话
+  const handleDeleteConversation = async () => {
+    setIsDropdownOpen(false);
+    if (!currentSession) return;
+
+    try {
+      await chatService.deleteSession(currentSession.id);
+      setCurrentSession(null);
+      setMessages([]);
+      messageService.success('对话已删除');
+    } catch (error) {
+      messageService.error(error.message);
+    }
+  };
+
+  // 处理标题编辑
+  const handleTitleClick = () => {
+    if (currentSession && !isEditingTitle) {
+      setTitleInput(currentSession.title || '新对话');
+      setIsEditingTitle(true);
+    }
+  };
+
+  const handleTitleSave = async () => {
+    if (!currentSession || !titleInput.trim()) return;
+    
+    try {
+      const newTitle = titleInput.trim().slice(0, 20);
+      await chatService.updateSessionTitle(currentSession.id, newTitle);
+      setIsEditingTitle(false);
+      // 更新当前会话的标题
+      setCurrentSession({
+        ...currentSession,
+        title: newTitle
+      });
+      messageService.success('标题已更新');
+    } catch (error) {
+      messageService.error(error.message);
+    }
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false);
+      setTitleInput(currentSession?.title || '新对话');
+    }
+  };
+
+  // 发送消息
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || loading) return;
+
+    try {
+      if (!currentSession) {
+        // 如果没有当前会话，先创建一个
+        const session = await chatService.createSession();
+        await chatService.sendMessage(session.id, inputMessage);
+      } else {
+        await chatService.sendMessage(currentSession.id, inputMessage);
+      }
+      setInputMessage('');
+    } catch (error) {
+      messageService.error(error.message);
+    }
+  };
+
+  // 监听消息变化，自动滚动
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // 加载会话消息
+  useEffect(() => {
+    if (currentSession) {
+      chatService.getSessionMessages(currentSession.id)
+        .catch(error => messageService.error(error.message));
+    }
+  }, [currentSession]);
 
   return (
     <div className="chat-area">
@@ -96,7 +185,6 @@ print_hello_world()
           zIndex: 20
         }}
       >
-        {/* 侧边栏头部 */}
         <div className="h-16 flex items-center justify-between px-4 border-b">
           <div className="flex items-center gap-3">
             <span className="text-lg font-semibold text-gray-800">对话列表</span>
@@ -109,7 +197,6 @@ print_hello_world()
           </button>
         </div>
 
-        {/* 对话列表 */}
         <div 
           className="flex-1 overflow-hidden transition-opacity duration-300"
           style={{
@@ -123,20 +210,48 @@ print_hello_world()
       {/* 聊天顶部状态栏 */}
       <div className="chat-header">
         <div className="header-left">
-          {/* 侧边栏和新对话按钮 */}
           <button
             className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200"
             onClick={() => setIsSidebarOpen(true)}
           >
             <RiMenuLine size={20} className="text-gray-600" />
           </button>
-          <button className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200">
+          <button 
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200"
+            onClick={handleNewChat}
+          >
             <RiAddLine size={20} className="text-gray-600" />
           </button>
         </div>
         <div className="header-container">
-          <div className="header-title">
-            新对话
+          <div className="flex flex-col">
+            <div
+              className="header-title"
+              onClick={handleTitleClick}
+              style={{ cursor: 'pointer' }}
+            >
+              {isEditingTitle ? (
+                <input
+                  type="text"
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={handleTitleSave}
+                  maxLength={20}
+                  className="bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none px-1 w-full"
+                  autoFocus
+                />
+              ) : (
+                <div className="hover:bg-gray-100 px-2 py-1 rounded">
+                  {currentSession?.title || '新对话'}
+                </div>
+              )}
+            </div>
+            {currentSession && (
+              <div className="text-xs text-gray-500 mt-1">
+                会话ID: {currentSession.clientUUID || '未生成'}
+              </div>
+            )}
           </div>
         </div>
         <div className="header-right">
@@ -172,21 +287,32 @@ print_hello_world()
       {/* 聊天记录区域 */}
       <div className="chat-messages">
         {messages.map((message) => (
-          <div 
-            key={message.id} 
-            className={`message ${message.type === 'user' ? 'message-user' : 'message-ai'}`}
+          <div
+            key={message.id}
+            className={`message ${message.role === 'user' ? 'message-user' : 'message-ai'}`}
           >
-            <article  className={`message-content ${message.type === 'ai' ? 'prose prose-sm prose-slate prose-p:text-black prose-pre:bg-gray-50 max-w-none' : ''}`}>
+            <article className={`message-content ${message.role === 'assistant' ? 'prose prose-sm prose-slate prose-p:text-black prose-pre:bg-gray-50 max-w-none' : ''}`}>
+              {message.status === 'sending' && (
+                <div className="text-sm text-gray-500 mb-2">发送中...</div>
+              )}
+              {message.status === 'receiving' && (
+                <div className="text-sm text-gray-500 mb-2">AI思考中...</div>
+              )}
               <div
-                className="whitespace-pre-wrap prose"
+                className={`whitespace-pre-wrap prose ${message.status === 'receiving' ? 'animate-pulse' : ''}`}
                 dangerouslySetInnerHTML={{
-                  __html: md.current.render(message.content)
+                  __html: md.current.render(message.content || '')
                 }}
               />
-            </article >
-            
+              {(message.status === 'failed') && (
+                <div className="text-sm text-red-500 mt-2">
+                  发送失败，请重试
+                </div>
+              )}
+            </article>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 底部输入框 */}
@@ -198,6 +324,7 @@ print_hello_world()
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="输入消息..."
               rows="1"
+              disabled={loading || !currentSession}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -205,7 +332,11 @@ print_hello_world()
                 }
               }}
             />
-            <button type="submit" className="send-button flex items-center justify-center">
+            <button 
+              type="submit" 
+              className="send-button flex items-center justify-center"
+              disabled={loading || !currentSession}
+            >
               <RiSendPlaneFill size={20} className="text-white" />
             </button>
           </div>

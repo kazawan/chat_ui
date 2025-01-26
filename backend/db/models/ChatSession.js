@@ -1,20 +1,26 @@
 const db = require('../database');
+const { v4: uuidv4 } = require('uuid');
 
 class ChatSession {
   static create({ userId, title }) {
+    const id = uuidv4();
     const sql = `
-      INSERT INTO chat_sessions (userId, title, lastMessageTime)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO chat_sessions (id, userId, title, lastMessageTime)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     `;
-    const params = [userId, title];
-    const result = db.prepare(sql).run(params);
-    return result.lastInsertRowid;
+    const params = [id, userId, title];
+    db.prepare(sql).run(params);
+    return id;
   }
 
   static findByUserId(userId) {
     const sql = `
       SELECT
-        cs.*,
+        cs.id,
+        cs.userId,
+        cs.title,
+        cs.lastMessageTime,
+        cs.createdAt,
         (SELECT content FROM chat_messages
          WHERE sessionId = cs.id
          AND role = 'assistant'
@@ -30,7 +36,11 @@ class ChatSession {
   static findById(id) {
     const sql = `
       SELECT
-        cs.*,
+        cs.id,
+        cs.userId,
+        cs.title,
+        cs.lastMessageTime,
+        cs.createdAt,
         (SELECT content FROM chat_messages
          WHERE sessionId = cs.id
          ORDER BY createdAt DESC

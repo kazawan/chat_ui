@@ -9,6 +9,8 @@ class DB {
   }
 
   connect() {
+    if (this.db) return; // 如果已经连接，则直接返回
+    
     try {
       // 确保数据目录存在
       const dataDir = path.dirname(this.dbPath);
@@ -17,7 +19,7 @@ class DB {
       }
 
       this.db = new Database(this.dbPath, {
-        verbose: null
+        verbose: console.log // 添加日志以便调试
       });
       
       // 启用外键约束

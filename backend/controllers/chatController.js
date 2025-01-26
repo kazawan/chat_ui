@@ -7,17 +7,25 @@ const db = require('../db/database');
 exports.createSession = async (req, res) => {
   try {
     // 创建会话
-    const sessionId = ChatSession.create({
+    const newSessionId = await ChatSession.create({
       userId: req.user.id,
       title: req.body.title || '新对话'
     });
+    
+    if (!newSessionId) {
+      throw new Error('创建会话失败：无法获取会话ID');
+    }
 
     // 获取创建的会话完整信息
-    const session = ChatSession.findById(sessionId);
+    const session = await ChatSession.findById(newSessionId);
     
+    if (!session) {
+      throw new Error('创建会话失败：无法获取会话信息');
+    }
+
     // 格式化返回数据以匹配前端期望的格式
     const formattedSession = {
-      id: session.id,
+      id: newSessionId,
       userId: session.userId,
       title: session.title,
       lastMessageTime: session.lastMessageTime,
@@ -44,10 +52,8 @@ exports.getSessions = async (req, res) => {
       title: session.title,
       lastMessageTime: session.lastMessageTime,
       createdAt: session.createdAt,
-      messages: session.lastMessage ? [{
-        content: session.lastMessage,
-        role: 'assistant'
-      }] : []
+      lastMessage: session.lastMessage,
+      messages: []
     }));
 
     res.json(formattedSessions);
@@ -101,14 +107,21 @@ exports.sendMessage = async (req, res) => {
     // 使用事务来确保数据一致性
     const sendMessageTx = db.transaction(() => {
       // 创建用户消息
-      ChatMessage.create({
+      console.log('开始保存用户消息');
+      const userMessageId = ChatMessage.create({
         sessionId,
         role: 'user',
         content
       });
 
+      if (!userMessageId) {
+        throw new Error('保存用户消息失败');
+      }
+      console.log('用户消息已保存，ID:', userMessageId);
+
       // 更新会话最后消息时间
       ChatSession.updateLastMessageTime(sessionId);
+      console.log('会话最后消息时间已更新');
     });
 
     sendMessageTx();
@@ -130,25 +143,50 @@ exports.sendMessage = async (req, res) => {
     try {
       const stream = await AiService.generateChatResponse(formattedMessages);
 
+      console.log('开始接收AI响应流');
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
           aiMessageContent += content;
+          console.log('接收到新的内容块，当前总长度:', aiMessageContent.length);
           res.write(`data: ${JSON.stringify({ content })}\n\n`);
         }
       }
+      console.log('AI响应流接收完成，总内容长度:', aiMessageContent.length);
 
-      // 保存 AI 回复
-      const saveMsgTx = db.transaction(() => {
-        ChatMessage.create({
-          sessionId,
-          role: 'assistant',
-          content: aiMessageContent
-        });
-        ChatSession.updateLastMessageTime(sessionId);
-      });
+      // 确保有完整的AI回复内容后再保存
+      if (aiMessageContent) {
+        try {
+          console.log('准备保存AI回复，内容长度:', aiMessageContent.length);
+          
+          // 保存 AI 回复并更新最后一条消息
+          const saveTx = db.transaction(() => {
+            // 保存AI消息到数据库
+            const messageId = ChatMessage.create({
+              sessionId,
+              role: 'assistant',
+              content: aiMessageContent
+            });
 
-      saveMsgTx();
+            if (!messageId) {
+              throw new Error('保存AI回复失败');
+            }
+
+            console.log('AI回复已保存，消息ID:', messageId);
+
+            // 只更新会话的最后消息时间
+            ChatSession.updateLastMessageTime(sessionId);
+          });
+
+          // 执行事务
+          saveTx();
+        } catch (error) {
+          console.error('保存AI回复失败:', error);
+          throw error;
+        }
+      } else {
+        console.error('AI回复内容为空，跳过保存');
+      }
 
       res.write('data: [DONE]\n\n');
     } catch (error) {
@@ -231,7 +269,7 @@ exports.regenerateMessage = async (req, res) => {
 
     // 获取要重新生成的消息
     const message = ChatMessage.findById(messageId);
-    if (!message || message.sessionId !== parseInt(sessionId) || message.role !== 'assistant') {
+    if (!message || message.sessionId !== sessionId || message.role !== 'assistant') {
       return res.status(404).json({ message: '消息不存在' });
     }
 
