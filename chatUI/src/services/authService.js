@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { chatService } from './chatService';
 
-const API_URL = 'http://localhost:3001/api/users'; // 后端API基础URL
+
+const API_URL = import.meta.env.VITE_BASE_URL + '/api/users' || 'http://localhost:3001/api/users'; // 后端API基础URL
 
 // 创建axios实例
 const api = axios.create({
