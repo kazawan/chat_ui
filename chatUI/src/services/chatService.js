@@ -290,13 +290,29 @@ const chatService = {
         }
       });
       
-      // 从会话列表中移除
-      store.setSessions(store.sessions.filter(session => session.id !== sessionId));
+      // 从会话列表中移除已删除的会话
+      const updatedSessions = store.sessions.filter(session => session.id !== sessionId);
+      store.setSessions(updatedSessions);
       
-      // 如果删除的是当前会话，清空当前会话
+      // 如果删除的是当前会话，且还有其他会话存在，则选择最新的会话
       if (store.currentSession?.id === sessionId) {
-        store.setCurrentSession(null);
-        store.setMessages([]);
+        if (updatedSessions.length > 0) {
+          // 根据创建时间排序，选择最新的会话
+          const latestSession = updatedSessions.reduce((latest, current) => {
+            return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+          }, updatedSessions[0]);
+          
+          // 获取最新会话的消息并设置为当前会话
+          const messages = await this.getSessionMessages(latestSession.id);
+          store.setCurrentSession({
+            ...latestSession,
+            messages: messages
+          });
+        } else {
+          // 如果没有其他会话，清空当前会话
+          store.setCurrentSession(null);
+          store.setMessages([]);
+        }
       }
     } catch (error) {
       store.setError(error.response?.data?.message || '删除会话失败');

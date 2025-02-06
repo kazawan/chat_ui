@@ -6,7 +6,8 @@ module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY,
-    baseUrl: process.env.DEEPSEEK_BASE_URL
+    baseUrl: process.env.DEEPSEEK_BASE_URL,
+    chatModel: process.env.CHAT_MODEL || 'deepseek-chat',
   },
   db: {
     path: process.env.DB_PATH || 'data/database.sqlite'

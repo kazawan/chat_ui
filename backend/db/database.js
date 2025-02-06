@@ -18,14 +18,10 @@ class DB {
         fs.mkdirSync(dataDir, { recursive: true });
       }
 
-      this.db = new Database(this.dbPath, {
-        verbose: console.log // 添加日志以便调试
-      });
+      this.db = new Database(this.dbPath);
       
       // 启用外键约束
       this.db.pragma('foreign_keys = ON');
-      
-      console.log('成功连接到数据库，路径:', this.dbPath);
     } catch (error) {
       console.error('连接数据库失败:', error);
       throw error;

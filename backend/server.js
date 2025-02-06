@@ -14,10 +14,24 @@ const path = require('path');
 
 const app = express();
 
-// 中间件
-app.use(cors());
-app.use(express.json());
+// 设置CORS和安全头部
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : 'http://localhost:5173',
+  credentials: true
+}));
 
+// 添加额外的安全头部
+app.use((req, res, next) => {
+  // 允许使用剪贴板API
+  res.setHeader('Permissions-Policy', 'clipboard-write=self');
+  // 内容安全策略
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';");
+  next();
+});
+
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 添加用户路由

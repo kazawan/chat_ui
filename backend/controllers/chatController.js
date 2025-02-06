@@ -35,7 +35,6 @@ exports.createSession = async (req, res) => {
 
     res.status(201).json(formattedSession);
   } catch (error) {
-    console.error('创建会话失败:', error);
     res.status(500).json({ message: '创建会话失败', error: error.message });
   }
 };
@@ -58,7 +57,6 @@ exports.getSessions = async (req, res) => {
 
     res.json(formattedSessions);
   } catch (error) {
-    console.error('获取会话列表失败:', error);
     res.status(500).json({ message: '获取会话列表失败', error: error.message });
   }
 };
@@ -87,7 +85,6 @@ exports.getSessionMessages = async (req, res) => {
 
     res.json(formattedMessages);
   } catch (error) {
-    console.error('获取消息历史失败:', error);
     res.status(500).json({ message: '获取消息历史失败', error: error.message });
   }
 };
@@ -106,8 +103,6 @@ exports.sendMessage = async (req, res) => {
 
     // 使用事务来确保数据一致性
     const sendMessageTx = db.transaction(() => {
-      // 创建用户消息
-      console.log('开始保存用户消息');
       const userMessageId = ChatMessage.create({
         sessionId,
         role: 'user',
@@ -117,11 +112,9 @@ exports.sendMessage = async (req, res) => {
       if (!userMessageId) {
         throw new Error('保存用户消息失败');
       }
-      console.log('用户消息已保存，ID:', userMessageId);
 
       // 更新会话最后消息时间
       ChatSession.updateLastMessageTime(sessionId);
-      console.log('会话最后消息时间已更新');
     });
 
     sendMessageTx();
@@ -141,62 +134,42 @@ exports.sendMessage = async (req, res) => {
     let aiMessageContent = '';
 
     try {
-      const stream = await AiService.generateChatResponse(formattedMessages);
+      const stream = await AiService.generateChatResponse(AiService.formatMessages(formattedMessages));
 
-      console.log('开始接收AI响应流');
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
           aiMessageContent += content;
-          console.log('接收到新的内容块，当前总长度:', aiMessageContent.length);
           res.write(`data: ${JSON.stringify({ content })}\n\n`);
         }
       }
-      console.log('AI响应流接收完成，总内容长度:', aiMessageContent.length);
 
-      // 确保有完整的AI回复内容后再保存
+      // 保存AI回复
       if (aiMessageContent) {
-        try {
-          console.log('准备保存AI回复，内容长度:', aiMessageContent.length);
-          
-          // 保存 AI 回复并更新最后一条消息
-          const saveTx = db.transaction(() => {
-            // 保存AI消息到数据库
-            const messageId = ChatMessage.create({
-              sessionId,
-              role: 'assistant',
-              content: aiMessageContent
-            });
-
-            if (!messageId) {
-              throw new Error('保存AI回复失败');
-            }
-
-            console.log('AI回复已保存，消息ID:', messageId);
-
-            // 只更新会话的最后消息时间
-            ChatSession.updateLastMessageTime(sessionId);
+        const saveTx = db.transaction(() => {
+          const messageId = ChatMessage.create({
+            sessionId,
+            role: 'assistant',
+            content: aiMessageContent
           });
 
-          // 执行事务
-          saveTx();
-        } catch (error) {
-          console.error('保存AI回复失败:', error);
-          throw error;
-        }
-      } else {
-        console.error('AI回复内容为空，跳过保存');
+          if (!messageId) {
+            throw new Error('保存AI回复失败');
+          }
+
+          ChatSession.updateLastMessageTime(sessionId);
+        });
+
+        saveTx();
       }
 
       res.write('data: [DONE]\n\n');
     } catch (error) {
-      console.error('AI 响应错误:', error);
       res.write(`data: ${JSON.stringify({ error: '生成回复时发生错误' })}\n\n`);
     }
 
     res.end();
   } catch (error) {
-    console.error('处理消息错误:', error);
     if (!res.headersSent) {
       res.status(500).json({ message: '发送消息失败', error: error.message });
     } else {
@@ -230,7 +203,6 @@ exports.deleteSession = async (req, res) => {
 
     res.json({ message: '会话已删除' });
   } catch (error) {
-    console.error('删除会话失败:', error);
     res.status(500).json({ message: '删除会话失败', error: error.message });
   }
 };
@@ -288,7 +260,7 @@ exports.regenerateMessage = async (req, res) => {
     let aiMessageContent = '';
 
     try {
-      const stream = await AiService.generateChatResponse(formattedMessages);
+      const stream = await AiService.generateChatResponse(AiService.formatMessages(formattedMessages));
 
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || '';
@@ -303,13 +275,11 @@ exports.regenerateMessage = async (req, res) => {
 
       res.write('data: [DONE]\n\n');
     } catch (error) {
-      console.error('AI 响应错误:', error);
       res.write(`data: ${JSON.stringify({ error: '生成回复时发生错误' })}\n\n`);
     }
 
     res.end();
   } catch (error) {
-    console.error('重新生成消息错误:', error);
     if (!res.headersSent) {
       res.status(500).json({ message: '重新生成消息失败', error: error.message });
     } else {

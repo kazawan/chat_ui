@@ -2,3 +2,4 @@
 /data/*.sqlite
 /data/*.sqlite-journal
 !/data/.gitkeep 
+.env

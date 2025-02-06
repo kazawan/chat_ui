@@ -10,7 +10,9 @@ import {
   RiMoreLine,
   RiSendPlaneFill,
   RiDownloadLine,
-  RiDeleteBinLine
+  RiDeleteBinLine,
+  RiFileCopyLine,
+  RiCheckLine
 } from "react-icons/ri";
 import ConversationList from '../ConversationList/ConversationList';
 import { useChatStore, chatService } from '../../services/chatService';
@@ -22,7 +24,47 @@ const ChatArea = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
+
+  // 处理复制功能
+  const handleCopy = async (text, messageId) => {
+    try {
+      // 首先尝试使用现代Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // 后备方案：使用传统的document.execCommand方法
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        
+        // 防止滚动
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          throw new Error('复制失败');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+      
+      // 显示复制成功状态
+      setCopiedId(messageId);
+      messageService.success('复制成功');
+      
+      setTimeout(() => {
+        setCopiedId(null);
+      }, 2000);
+    } catch (err) {
+      messageService.error('复制失败，请手动复制');
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,6 +199,30 @@ const ChatArea = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 初始化加载最新会话
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        // 获取所有会话
+        const sessions = await chatService.getSessions();
+        if (sessions.length > 0) {
+          // 如果有会话，选择最新的一个
+          const latestSession = sessions.reduce((latest, current) => {
+            return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+          }, sessions[0]);
+          setCurrentSession(latestSession);
+        } else {
+          // 如果没有会话，创建一个新的
+          await handleNewChat();
+        }
+      } catch (error) {
+        messageService.error('初始化会话失败');
+      }
+    };
+
+    initializeChat();
+  }, []); // 仅在组件挂载时执行一次
 
   // 加载会话消息
   useEffect(() => {
@@ -298,12 +364,33 @@ const ChatArea = () => {
               {message.status === 'receiving' && (
                 <div className="text-sm text-gray-500 mb-2">AI思考中...</div>
               )}
-              <div
-                className={`whitespace-pre-wrap prose ${message.status === 'receiving' ? 'animate-pulse' : ''}`}
-                dangerouslySetInnerHTML={{
-                  __html: md.current.render(message.content || '')
-                }}
-              />
+              <div className="relative">
+                <div
+                  className={`whitespace-pre-wrap prose ${message.status === 'receiving' ? 'animate-pulse' : ''}`}
+                  dangerouslySetInnerHTML={{
+                    __html: md.current.render(message.content || '')
+                  }}
+                />
+                {message.role === 'assistant' && message.status !== 'receiving' && (
+                  <button
+                    className={`copy-button ${copiedId === message.id ? 'copied' : ''}`}
+                    onClick={() => handleCopy(message.content, message.id)}
+                    title="复制内容"
+                  >
+                    {copiedId === message.id ? (
+                      <>
+                        <RiCheckLine size={16} />
+                        <span className="text-xs">已复制</span>
+                      </>
+                    ) : (
+                      <>
+                        <RiFileCopyLine size={16} />
+                        <span className="text-xs">复制</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               {(message.status === 'failed') && (
                 <div className="text-sm text-red-500 mt-2">
                   发送失败，请重试

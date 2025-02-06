@@ -102,16 +102,17 @@
 
 .message {
   display: flex;
-  max-width: 80%;
   margin-bottom: 1rem;
 }
 
 .message-ai {
   align-self: flex-start;
+  width: 100%;
 }
 
 .message-user {
   align-self: flex-end;
+  max-width: 80%;
 }
 
 .message-content {
@@ -125,6 +126,41 @@
   border: 1px solid #e0e0e0;
   border-radius: 12px 12px 12px 0;
   width: 100%;
+  position: relative;
+}
+
+.copy-button {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  color: #666;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.message-content:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+  border-color: #d1d5db;
+}
+
+.copy-button.copied {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border-color: #86efac;
 }
 
 /* Tailwind Typography 自定义样式 */
