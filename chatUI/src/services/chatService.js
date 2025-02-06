@@ -4,6 +4,21 @@ import axios from 'axios';
 // API基础URL
 const API_URL = import.meta.env.VITE_BASE_URL + '/api/chat' || 'http://localhost:3001/api/chat';
 
+// 生成UUID的兼容性函数
+const generateUUID = () => {
+  // 检查是否支持crypto.randomUUID()
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // 降级方案：手动生成UUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 // 聊天状态管理
 const useChatStore = create((set) => ({
   sessions: [],
@@ -68,7 +83,7 @@ const chatService = {
       // 为每个会话添加clientUUID
       const sessionsWithUUID = response.data.map(session => ({
         ...session,
-        clientUUID: self.crypto.randomUUID()
+        clientUUID: generateUUID()
       }));
       store.setSessions(sessionsWithUUID);
       return sessionsWithUUID;
@@ -92,7 +107,7 @@ const chatService = {
       });
       const sessionData = {
         ...response.data,
-        clientUUID: self.crypto.randomUUID()
+        clientUUID: generateUUID()
       };
       store.setCurrentSession(sessionData);
       store.setMessages([]);
