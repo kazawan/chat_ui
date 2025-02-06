@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 
 // API基础URL
-const API_URL = import.meta.env.VITE_BASE_URL + 'api/chat' || 'http://localhost:3001/api/chat';
+const API_URL = import.meta.env.VITE_BASE_URL + '/api/chat' || 'http://localhost:3001/api/chat';
 
 // 聊天状态管理
 const useChatStore = create((set) => ({
